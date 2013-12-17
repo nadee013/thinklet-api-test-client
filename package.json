@@ -1,0 +1,9 @@
+// {
+//   "name" : "thinklet-api-test-client",
+//   "version" : "1.0.0",
+//   "dependencies" : {
+//     "express" : "3.2.x",
+//     "ejs" : "0.8.x",
+//     "ddp": "0.4.x"
+//   }
+// }
