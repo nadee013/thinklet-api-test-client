@@ -20,18 +20,21 @@ app.use(express.bodyParser());
 app.use(express.static("public"));
 app.engine('html', require('ejs').renderFile);
 
+//connect to ddpclient
 ddpclient.connect(function(error) {
   if(error) {
     console.log("DDP connection error..!");
-    res.send(404);
   }
-  ddpclient.loginWithUsername("nadee013","aaaaaa",function(err,result) {
+  //login with ddpclient
+  //uses meteor db
+  //user is an api user
+  ddpclient.loginWithUsername("apiuser","aaaaaa",function(err,result) {
     if(err) {
       console.log("User login error");
-      res.send(404);
     }
   });
   console.log("Connected..!");
+
   app.get("/", function (req, res) {
     res.render("index.html");
   });
@@ -66,51 +69,58 @@ ddpclient.connect(function(error) {
         var userId = null;
         create(thinkletSpaceInfo, thinkletInfo, userInfo);
 
+        //calling api methods
+        //each in callback in the order to create sso loginToken
         function create(thinkletSpaceInfo, thinkletInfo, userInfo) {
+          //call api.createThinkletSpace
           ddpclient.call("api.createThinkletSpace", [thinkletSpaceInfo], function(err, id) {
             if(err) {
               console.log(err);
               res.send(404);
             }
             thinkletspaceId = id;
-            console.log("thinkletSpace----------", thinkletspaceId);
+            //thinkletInfo can be null as well
             if(thinkletInfo && thinkletInfo.name) {
-              ddpclient.call("api.createThinklets", [thinkletspaceId, thinkletInfo], createThinklets);
+              //if thinkletInfo exists
+              //call api.createThinklets with created thinklet group id
+              ddpclient.call("api.createThinklets", [thinkletspaceId, thinkletInfo], createNewUser);
             } else {
-              createThinklets(null, null);
+              //if not
+              createNewUser(null, null);
             }
           });
 
-          function createThinklets(err, id) {
+          function createNewUser(err, id) {
             if(err) {
-              console.log("----------", err);
+              console.log(err);
               res.send(404);
             } else {
               thinkletId = id;
-              console.log("thinklet----------", thinkletId);
-              ddpclient.call("api.addUser", [userInfo, thinkletspaceId], createNewUser);
+              //call api.addUser with created thinklet group adn thinklet ids
+              ddpclient.call("api.addUser", [userInfo, thinkletspaceId], createNewSSOToken);
             }
           }
         }
 
-        function createNewUser(err, id) {
+        function createNewSSOToken(err, id) {
           if(err) {
             console.log(err);
             res.send(404);
           } else {
             userId = id;
-            console.log("user---------------", userId);
-            ddpclient.call("api.createSSOToken", [userId, thinkletspaceId, thinkletId], createSSOToken);
+            //call api.createSSOToken with created thinklet group id, thinklet id and new user id
+            ddpclient.call("api.createSSOToken", [userId, thinkletspaceId, thinkletId], generateUrl);
           }
         }
 
-        function createSSOToken(err, tokenData) {
+        function generateUrl(err, tokenData) {
           if(err) {
             console.log(err);
             res.send(404);
+          } else {
+            //redirect user to generated url with login token
+            console.log(res.redirect("http://localhost:3000/sso/login/" + tokenData.token));   
           }
-          console.log("token.................", tokenData);
-          console.log(res.redirect("http://localhost:3000/sso/login/" + tokenData.token));
         }
       }
     }
