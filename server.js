@@ -119,7 +119,7 @@ ddpclient.connect(function(error) {
             res.send(404);
           } else {
             //redirect user to generated url with login token
-            console.log(res.redirect("http://localhost:3000/sso/login/" + tokenData.token));   
+            res.redirect("http://localhost:3000/sso/login/" + tokenData.token);
           }
         }
       }
