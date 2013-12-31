@@ -3,15 +3,20 @@
     <link rel="stylesheet" type="text/css" href="/dist/css/bootstrap.css">
   </head>
   <body>
-    <form id="index" method= "post" action= "/get_url" class="form-horizontal">
-      <div style="margin: 30px; font-size: 16px">
-        <h2>Add Following details to create new space</h2> <br><br>
-        <input type="text" name= "thinkletSpaceName" placeholder= "Add a thinklet group name" id= "thinkletSpaceName" style="width: 300px"/><br><br>
-        <input type= "text" name= "thinkletName" id= "thinkletName" placeholder= "Add a thinklet name"  style="width: 300px"/><br><br>
-        <input type= "text" name= "userEmail" type="email" id= "userEmail" placeholder= "Add a email address for the user"  style="width: 300px"/>
-        <button id= "create" class= "btn btn-primary" type="submit">Create</button><br><br>
-        <input id= "url" style="display:none; width: 500px; height: 20px; font-size: 16px"/>
-      </div>
-    </form>
+    <div style="margin: 30px; font-size: 16px">
+      <form id="index" method= "post" action= "/get_url" class="form-horizontal">
+          <h2>Add Following details to create new space</h2> <br><br>
+          <input type="text" name= "thinkletSpaceName" placeholder= "Add a thinklet group name" id= "thinkletSpaceName" style="width: 300px"/><br><br>
+          <input type= "text" name= "thinkletName" id= "thinkletName" placeholder= "Add a thinklet name"  style="width: 300px"/><br><br>
+          <input type= "text" name= "userEmail" type="email" id= "userEmail" placeholder= "Add a email address for the user"  style="width: 300px"/>
+          <button id= "create" class= "btn btn-primary" type="submit">Create</button><br><br>
+          <input id= "url" style="display:none; width: 500px; height: 20px; font-size: 16px"/>
+      </form>
+      <% if(url) { %>
+        <a href = "<%= url %>">Click here to view OpenPD</a>
+        <br>
+        <a href="/chat">Click here to chat remotely</a>
+      <% } %>
+    </div>
   </body>
 </html>

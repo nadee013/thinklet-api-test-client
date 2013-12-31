@@ -20,6 +20,9 @@ app.use(express.bodyParser());
 app.use(express.static("public"));
 app.engine('html', require('ejs').renderFile);
 
+var thinkletspaceId = null;
+var thinkletId = null;
+var userId = null;
 //connect to ddpclient
 ddpclient.connect(function(error) {
   if(error) {
@@ -35,8 +38,9 @@ ddpclient.connect(function(error) {
   });
   console.log("Connected..!");
 
+
   app.get("/", function (req, res) {
-    res.render("index.html");
+    res.render("index.html", {"url": null, "thinkletspaceId": null, "thinkletId": null, "userId": null});
   });
 
   app.post("/get_url", function (req, res) {
@@ -64,9 +68,7 @@ ddpclient.connect(function(error) {
           "email": userEmail,
           "permission": "participant"
         }
-        var thinkletspaceId = null;
-        var thinkletId = null;
-        var userId = null;
+       
         create(thinkletSpaceInfo, thinkletInfo, userInfo);
 
         //calling api methods
@@ -119,10 +121,37 @@ ddpclient.connect(function(error) {
             res.send(404);
           } else {
             //redirect user to generated url with login token
-            res.redirect("http://localhost:3000/sso/login/" + tokenData.token);
+            var url = "http://localhost:3000/sso/login/" + tokenData.token;
+            res.render("index.html", {"url": url, "thinkletspaceId": thinkletspaceId, "thinkletId": thinkletId, "userId": userId});
           }
         }
       }
+    }
+  });
+
+  app.get("/chat", function (req, res) {
+    res.render("chat.html");
+  });
+
+  app.post("/get_chat", function (req, res) {
+    var chatMessage = req.body.message;
+    if(!chatMessage) {
+      console.log("Chat message field should have a value");
+      res.redirect("/chat");
+    } else {
+      sendChat(thinkletspaceId, thinkletId, userId, chatMessage);
+    }
+
+    function sendChat(thinkletspaceId, thinkletId, userId, chatMessage) {
+      console.log(arguments);
+      ddpclient.call("api.chat", [thinkletspaceId, thinkletId, userId, chatMessage], function(err) {
+        if(err) {
+          console.log("---", err);
+          res.send(404);
+        } else {
+          res.redirect("/chat");
+        }
+      });
     }
   });
 });
