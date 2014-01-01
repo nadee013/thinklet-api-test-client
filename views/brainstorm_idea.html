@@ -1,16 +1,26 @@
 <html>
   <head>
     <link rel="stylesheet" type="text/css" href="/dist/css/bootstrap.css">
+    <script type="text/javascript" src= "/jquery-1.10.2.min.js"></script>
+    <script type="text/javascript">
+      $(function() {
+        // $("li").removeClass("active");
+        var uri = window.location.pathname;
+        if(uri == "/brainstorm_idea") {
+          $(".idea").addClass("active");
+        }
+      });
+    </script>
   </head>
   <body>
     <div style="width: 50%; padding: 20px">
       <% if(url) { %>
         <ul class="nav nav-pills">
-          <li><a href="/">Home</a></li>
-          <li><a href="<%= url %>">OpenPD</a></li>
-          <li><a href="/chat">Chat</a></li>
-          <li><a href="/brainstorm_group">Idea Group</a></li>
-          <li><a href="/brainstorm_idea">Ideas</a></li>
+          <li class="home"><a href="/">Home</a></li>
+          <li class="openpd"><a href="<%= url %>">OpenPD</a></li>
+          <li class="chat"><a href="/chat">Chat</a></li>
+          <li class="group"><a href="/brainstorm_group">Idea Group</a></li>
+          <li class="idea"><a href="/brainstorm_idea">Ideas</a></li>
         </ul>
       <% } %>
       <form id="brainstormIdea" method= "post" action= "/get_idea" role="form">
