@@ -28,4 +28,4 @@ Get thinklets-api-test-client from [here](https://github.com/nadee013/thinklet-a
 ~~~
 
 - Go to the following link.
-[http://www.localhost:8000](http://www.localhost:8000)
+[http://www.localhost:8000](http://localhost:8000)
