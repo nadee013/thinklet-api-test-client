@@ -66,7 +66,11 @@ ddpclient.connect(function(error) {
       } else {
         var userInfo = {
           "email": userEmail,
-          "permission": "facilitator"
+          "permission": "facilitator",
+          "firstname": "nadee",
+          "lastname": "anu",
+          "organization": "new"
+          
         }
        
         //call api.createThinkletSpace to create new thinklet group
@@ -211,6 +215,7 @@ ddpclient.connect(function(error) {
         console.log(err);
         res.send(404);
       } else {
+
         res.redirect("/brainstorm_idea");
       }
     }
