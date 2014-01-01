@@ -3,20 +3,25 @@
     <link rel="stylesheet" type="text/css" href="/dist/css/bootstrap.css">
   </head>
   <body>
-    <div style="margin: 30px; font-size: 16px">
-      <form id="index" method= "post" action= "/get_url" class="form-horizontal">
-          <h2>Add Following details to create new space</h2> <br><br>
-          <input type="text" name= "thinkletSpaceName" placeholder= "Add a thinklet group name" id= "thinkletSpaceName" style="width: 300px"/><br><br>
-          <input type= "text" name= "thinkletName" id= "thinkletName" placeholder= "Add a thinklet name"  style="width: 300px"/><br><br>
-          <input type= "text" name= "userEmail" type="email" id= "userEmail" placeholder= "Add a email address for the user"  style="width: 300px"/>
-          <button id= "create" class= "btn btn-primary" type="submit">Create</button><br><br>
-          <input id= "url" style="display:none; width: 500px; height: 20px; font-size: 16px"/>
-      </form>
+    <div style= "width: 50%; padding: 20px">
       <% if(url) { %>
-        <a href = "<%= url %>">Click here to view OpenPD</a>
-        <br>
-        <a href="/chat">Click here to chat remotely</a>
+        <ul class="nav nav-pills">
+          <li><a href="/">Home</a></li>
+          <li><a href="<%= url %>">OpenPD</a></li>
+          <li><a href="/chat">Chat</a></li>
+          <li><a href="/brainstorm_group">Idea Group</a></li>
+          <li><a href="/brainstorm_idea">Ideas</a></li>
+        </ul>
       <% } %>
+      <form id="index" method= "post" action= "/get_url" role="form">
+          <h3>Add Following details to create a new space</h3> <br><br>
+          <div class="form-group">
+            <input type="text" name= "thinkletSpaceName" placeholder= "Add a thinklet group name" id= "thinkletSpaceName" class="form-control"/><br>
+            <input type= "text" name= "thinkletName" id= "thinkletName" placeholder= "Add a thinklet name"  class="form-control"/><br>
+            <input type= "text" name= "userEmail" type="email" id= "userEmail" placeholder= "Add a email address for the user" class="form-control"/> 
+          </div>
+          <button id= "create" class= "btn btn-primary" type="submit">Create</button><br><br>
+      </form>
     </div>
   </body>
 </html>

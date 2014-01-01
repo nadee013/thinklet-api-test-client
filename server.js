@@ -13,7 +13,6 @@ ddpclient = new DDPClient({
   use_ssl_strict: false, //Set to false if you have root ca trouble.
   maintain_collections: true //Set to false to maintain your own collections.
 });
-// console.log(ddpclient);
 
 var app = express();
 app.use(express.bodyParser());
@@ -23,6 +22,7 @@ app.engine('html', require('ejs').renderFile);
 var thinkletspaceId = null;
 var thinkletId = null;
 var userId = null;
+var url = null;
 //connect to ddpclient
 ddpclient.connect(function(error) {
   if(error) {
@@ -38,7 +38,7 @@ ddpclient.connect(function(error) {
   });
   console.log("Connected..!");
 
-
+  //home route
   app.get("/", function (req, res) {
     res.render("index.html", {"url": null, "thinkletspaceId": null, "thinkletId": null, "userId": null});
   });
@@ -66,62 +66,74 @@ ddpclient.connect(function(error) {
       } else {
         var userInfo = {
           "email": userEmail,
-          "permission": "participant"
+          "permission": "facilitator",
+          "firstname": "nadee",
+          "lastname": "anu",
+          "organization": "new"
+          
         }
        
-        create(thinkletSpaceInfo, thinkletInfo, userInfo);
+        //call api.createThinkletSpace to create new thinklet group
+        ddpclient.call("api.createThinkletSpace", [thinkletSpaceInfo], createdThinkletSpacesCallback);
 
-        //calling api methods
-        //each in callback in the order to create sso loginToken
-        function create(thinkletSpaceInfo, thinkletInfo, userInfo) {
-          //call api.createThinkletSpace
-          ddpclient.call("api.createThinkletSpace", [thinkletSpaceInfo], function(err, id) {
-            if(err) {
-              console.log(err);
-              res.send(404);
-            }
-            thinkletspaceId = id;
-            //thinkletInfo can be null as well
-            if(thinkletInfo && thinkletInfo.name) {
-              //if thinkletInfo exists
-              //call api.createThinklets with created thinklet group id
-              ddpclient.call("api.createThinklets", [thinkletspaceId, thinkletInfo], createNewUser);
-            } else {
-              //if not
-              createNewUser(null, null);
-            }
-          });
-
-          function createNewUser(err, id) {
-            if(err) {
-              console.log(err);
-              res.send(404);
-            } else {
-              thinkletId = id;
-              //call api.addUser with created thinklet group adn thinklet ids
-              ddpclient.call("api.addUser", [userInfo, thinkletspaceId], createNewSSOToken);
-            }
+        function createdThinkletSpacesCallback(err, id) {
+          if(err) {
+            console.log(err);
+            res.send(404);
+          }
+          thinkletspaceId = id;
+          if(thinkletInfo && thinkletInfo.name) {
+            //if thinkletInfo exists
+            //call api.createThinklets to create thinklet with created thinklet group id
+            ddpclient.call("api.createThinklets", [thinkletspaceId, thinkletInfo], createdThinkletsCallback);
+          } else {
+            //if thinklet information has not been given
+            //step into creating user
+            createdThinkletsCallback(null, null);
+          }
+        }
+    
+        function createdThinkletsCallback(err, id) {
+          if(err) {
+            console.log(err);
+            res.send(404);
+          } else {
+            thinkletId = id;
+            //call api.addUser to add new user with created thinklet group and thinklet ids
+            ddpclient.call("api.addUser", [userInfo, thinkletspaceId], addedUserCallback);
           }
         }
 
-        function createNewSSOToken(err, id) {
+        //to add ideas, thinklet should be started
+        //we start it in server to demonstrate adding ideas using api
+        function addedUserCallback(err, id) {
           if(err) {
             console.log(err);
             res.send(404);
           } else {
             userId = id;
-            //call api.createSSOToken with created thinklet group id, thinklet id and new user id
-            ddpclient.call("api.createSSOToken", [userId, thinkletspaceId, thinkletId], generateUrl);
+            //call api.thinkletStateChange to start thinklet for 1 hour
+            ddpclient.call("api.thinkletStateChange", [thinkletId, "start", 60*60*1000, Date.now(), userId], changedThinkletStateCallback);
           }
         }
 
-        function generateUrl(err, tokenData) {
+        function changedThinkletStateCallback(err) {
           if(err) {
             console.log(err);
             res.send(404);
           } else {
-            //redirect user to generated url with login token
-            var url = "http://localhost:3000/sso/login/" + tokenData.token;
+            //call api.createSSOToken to create sso token with created thinklet group id, thinklet id and new user id
+            ddpclient.call("api.createSSOToken", [userId, thinkletspaceId, thinkletId], createdSSOTokenCallback);
+          }
+        }
+
+        function createdSSOTokenCallback(err, tokenData) {
+          if(err) {
+            console.log(err);
+            res.send(404);
+          } else {
+            //generate url with login token
+            url = "http://localhost:3000/sso/login/" + tokenData.token;
             res.render("index.html", {"url": url, "thinkletspaceId": thinkletspaceId, "thinkletId": thinkletId, "userId": userId});
           }
         }
@@ -129,29 +141,83 @@ ddpclient.connect(function(error) {
     }
   });
 
+  //chat route
   app.get("/chat", function (req, res) {
-    res.render("chat.html");
+    res.render("chat.html", {"url": url});
   });
 
   app.post("/get_chat", function (req, res) {
     var chatMessage = req.body.message;
     if(!chatMessage) {
       console.log("Chat message field should have a value");
-      res.redirect("/chat");
+      res.redirect("/chat", {"url": url});
     } else {
-      sendChat(thinkletspaceId, thinkletId, userId, chatMessage);
+      //calli api.chat to add chat messages
+      ddpclient.call("api.chat", [thinkletspaceId, thinkletId, userId, chatMessage], chatSentcallback);
     }
 
-    function sendChat(thinkletspaceId, thinkletId, userId, chatMessage) {
-      console.log(arguments);
-      ddpclient.call("api.chat", [thinkletspaceId, thinkletId, userId, chatMessage], function(err) {
-        if(err) {
-          console.log("---", err);
-          res.send(404);
-        } else {
-          res.redirect("/chat");
-        }
-      });
+    function chatSentcallback(err) {
+      if(err) {
+        console.log(err);
+        res.send(404);
+      } else {
+        //on success, redirect to add another chat message
+        res.redirect("/chat");
+      }
+    }
+  });
+
+  //brainstorm group route
+  app.get("/brainstorm_group", function (req, res) {
+    res.render("brainstorm_group.html", {"url": url});
+  });
+
+  app.post("/get_group", function (req, res) {
+    var groupName = req.body.groupName;
+    if(!groupName) {
+      console.log(err);
+      res.send(404);
+    } else {
+      var ideaGroupInfo = {
+        "name": groupName
+      }
+      ddpclient.call("api.addIdeaGroups", [thinkletId, ideaGroupInfo, userId], addedIdeaGroupsCallback);
+    }
+
+    function addedIdeaGroupsCallback(err, id) {
+      if(err) {
+        console.log(err);
+        res.send(404);
+      } else {
+        res.redirect("/brainstorm_idea");
+      }
+    }
+  });
+
+  app.get("/brainstorm_idea", function (req, res) {
+    res.render("brainstorm_idea.html", {"url": url});
+  });
+
+  app.post("/get_idea", function (req, res) {
+    var ideaName = req.body.ideaName;
+    if(!ideaName) {
+      console.log(err);
+      res.send(404);
+    } else {
+      var ideaInfo = {
+        "text": ideaName
+      }
+      ddpclient.call("api.addIdea",  [thinkletId, ideaInfo, userId], addedIdeaCallback);
+    }
+
+    function addedIdeaCallback(err, id) {
+      if(err) {
+        console.log(err);
+        res.send(404);
+      } else {
+
+        res.redirect("/brainstorm_idea");
+      }
     }
   });
 });

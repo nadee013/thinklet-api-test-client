@@ -1,10 +1,9 @@
 <html>
   <head>
     <link rel="stylesheet" type="text/css" href="/dist/css/bootstrap.css">
-    <script type="text/javascript" src= "/jquery-1.10.2.min.js"></script>
   </head>
   <body>
-    <div style= "width: 50%; padding: 20px">
+    <div style="width: 50%; padding: 20px">
       <% if(url) { %>
         <ul class="nav nav-pills">
           <li><a href="/">Home</a></li>
@@ -14,14 +13,13 @@
           <li><a href="/brainstorm_idea">Ideas</a></li>
         </ul>
       <% } %>
-      <form role="form" action= "/get_chat" method= "post" id= "chat">
+      <form id="brainstormIdea" method= "post" action= "/get_idea" role="form">
         <div class="form-group">
-          <h3>Enter chat message</h3> <br>
-          <input type="text" class="form-control" name="message" id="message" placeholder="Enter chat">
+          <h3>Enter brainstorm idea</h3> <br>
+          <input type="text" class="form-control" name="ideaName" id="ideaName" placeholder="Enter idea name">
         </div>
         <button type="submit" class="btn btn-primary">Submit</button>
       </form>
     </div>
   </body>
-   
 </html>
