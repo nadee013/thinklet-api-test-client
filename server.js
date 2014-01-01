@@ -70,9 +70,7 @@ ddpclient.connect(function(error) {
           "firstname": "nadee",
           "lastname": "anu",
           "organization": "new"
-          
-        }
-       
+        }     
         //call api.createThinkletSpace to create new thinklet group
         ddpclient.call("api.createThinkletSpace", [thinkletSpaceInfo], createdThinkletSpacesCallback);
 
@@ -181,6 +179,7 @@ ddpclient.connect(function(error) {
       var ideaGroupInfo = {
         "name": groupName
       }
+      //call api.addIdeaGroups to add idea groups
       ddpclient.call("api.addIdeaGroups", [thinkletId, ideaGroupInfo, userId], addedIdeaGroupsCallback);
     }
 
@@ -189,11 +188,13 @@ ddpclient.connect(function(error) {
         console.log(err);
         res.send(404);
       } else {
+        //on success redirect to brainstorm idea route to add ideas
         res.redirect("/brainstorm_idea");
       }
     }
   });
 
+  //brainstorm idea route
   app.get("/brainstorm_idea", function (req, res) {
     res.render("brainstorm_idea.html", {"url": url});
   });
@@ -207,6 +208,7 @@ ddpclient.connect(function(error) {
       var ideaInfo = {
         "text": ideaName
       }
+      //call api.addIdea to add new ideas
       ddpclient.call("api.addIdea",  [thinkletId, ideaInfo, userId], addedIdeaCallback);
     }
 
@@ -215,7 +217,7 @@ ddpclient.connect(function(error) {
         console.log(err);
         res.send(404);
       } else {
-
+        //on success redirect to same path to add more ideas
         res.redirect("/brainstorm_idea");
       }
     }
