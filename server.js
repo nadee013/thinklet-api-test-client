@@ -222,6 +222,31 @@ ddpclient.connect(function(error) {
       }
     }
   });
+
+  //thinkletSpace view via read apis
+  app.get("/thinkletSpace", function (req, res) {
+    ddpclient.call("api.getThinkletSpaceSettings", [thinkletspaceId, null], function (err, result) {
+      if(err) {
+        console.log(err);
+        res.send(404);
+      } else {
+        res.render("thinkletSpace.html", {"url": url, "thinkletSpace": result.thinkletSpace});
+      }
+    });
+  });
+
+  app.get("/thinklet", function (req, res) {
+    ddpclient.call("api.getThinkletsSummary", [thinkletId, null], function(err, result) {
+      if(err) {
+        console.log(err);
+        res.send(404);
+      } else {
+        // res.send(result);
+        res.render("thinklet.html", {"url": url, "doc": result});
+      }
+    });
+  });
+
 });
 
 var port = 8000;

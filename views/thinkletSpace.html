@@ -6,8 +6,8 @@
       $(function() {
         // $("li").removeClass("active");
         var uri = window.location.pathname;
-        if(uri == "/brainstorm_idea") {
-          $(".idea").addClass("active");
+        if(uri == "/thinkletSpace") {
+          $(".thinkletGroup").addClass("active");
         }
       });
     </script>
@@ -25,13 +25,18 @@
           <li class="thinklet"><a href="/thinklet">Thinklet</a></li>
         </ul>
       <% } %>
-      <form id="brainstormIdea" method= "post" action= "/get_idea" role="form">
-        <div class="form-group">
-          <h3>Enter brainstorm idea</h3> <br>
-          <input type="text" class="form-control" name="ideaName" id="ideaName" placeholder="Enter idea name">
-        </div>
-        <button type="submit" class="btn btn-primary">Submit</button>
-      </form>
+      <div class="form-group">
+        <h3>Thinklet Group Information</h3> <br>
+        <ul class="list-group">
+          <li class="list-group-item"><b>Thinklet Group Name: </b><%= thinkletSpace.name %></li>
+          <li class="list-group-item"><b>Created on: </b><%= Date(thinkletSpace.created) %></li>
+          <li class="list-group-item"><b>Thinklets: </b><ol><% for(var i=0; i<thinkletSpace.thinklets.length; i++) { %>
+              <li><a href="/thinklet">Thinklet</a></li>
+            <% } %>
+            </ol>
+          </li>
+        </ul>
+      </div>
     </div>
   </body>
 </html>
