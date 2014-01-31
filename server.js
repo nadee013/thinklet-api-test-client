@@ -48,93 +48,97 @@ ddpclient.connect(function(error) {
     if(!thinkletSpaceName) {
       console.log("thinkletSpace field not found");
       res.send(404);
-    } else {  
-      var thinkletSpaceInfo = {
-        "name": thinkletSpaceName
-      }
-      var thinkletName = req.body.thinkletName;
-      var thinkletInfo = {
-        "name": thinkletName,
-        "type": "brainstorm",
-        "usersetId": null,
-        "otherFields": {}
-      }
-      var userEmail = req.body.userEmail;
-      if(!userEmail) {
-        console.log("User email field not found");
+    } else {
+      var organization = req.body.org;
+      if(!organization) {
+        console.log("Organization field not found");
         res.send(404);
       } else {
-        var userInfo = {
-          "email": userEmail,
-          "permission": "facilitator",
-          "firstname": "nadee",
-          "lastname": "anu",
-          "organization": "new"
+        var thinkletSpaceInfo = {
+          "name": thinkletSpaceName,
+          "orgId": organization
+        }
+        var thinkletName = req.body.thinkletName;
+        var thinkletInfo = {
+          "name": thinkletName,
+          "type": "brainstorm",
+          "usersetId": null,
+          "otherFields": {}
+        }
+        var userEmail = req.body.userEmail;
+        if(!userEmail) {
+          console.log("User email field not found");
+          res.send(404);
+        }
+        else {
+          var userInfo = {
+            "email": userEmail,
+            "permission": "facilitator",
+            "firstname": "nadee",
+            "lastname": "anu",
+            "organization": "new"
+          } 
+          //call api.createThinkletSpace to create new thinklet group
+          ddpclient.call("api.createThinkletSpace", [thinkletSpaceInfo], createdThinkletSpacesCallback);
+          function createdThinkletSpacesCallback(err, id) {
+            if(err) {
+              console.log(err);
+              res.send(404);
+            }
+            thinkletspaceId = id;
+            if(thinkletInfo && thinkletInfo.name) {
+              //if thinkletInfo exists
+              //call api.createThinklets to create thinklet with created thinklet group id
+              ddpclient.call("api.createThinklets", [thinkletspaceId, thinkletInfo], createdThinkletsCallback);
+            } else {
+              //if thinklet information has not been given
+              //step into creating user
+              createdThinkletsCallback(null, null);
+            }
+          }
+        
+          function createdThinkletsCallback(err, id) {
+            if(err) {
+              console.log(err);
+              res.send(404);
+            } else {
+              thinkletId = id;
+              //call api.addUser to add new user with created thinklet group and thinklet ids
+              ddpclient.call("api.addUser", [userInfo, thinkletspaceId], addedUserCallback);
+            }
+          }
+          //to add ideas, thinklet should be started
+          //we start it in server to demonstrate adding ideas using api
+          function addedUserCallback(err, id) {
+            if(err) {
+              console.log(err);
+              res.send(404);
+            } else {
+              userId = id;
+              //call api.thinkletStateChange to start thinklet for 1 hour
+              ddpclient.call("api.thinkletStateChange", [thinkletId, "start", 60*60*1000, Date.now(), userId], changedThinkletStateCallback);
+            }
+          }
+          function changedThinkletStateCallback(err) {
+            if(err) {
+              console.log(err);
+              res.send(404);
+            } else {
+              //call api.createSSOToken to create sso token with created thinklet group id, thinklet id and new user id
+              ddpclient.call("api.createSSOToken", [userId, thinkletspaceId, thinkletId], createdSSOTokenCallback);
+            }
+          }
+          function createdSSOTokenCallback(err, tokenData) {
+            if(err) {
+              console.log(err);
+              res.send(404);
+            } else {
+              //generate url with login token
+              url = "http://localhost:3000/sso/login/" + tokenData.token;
+              res.render("index.html", {"url": url, "thinkletspaceId": thinkletspaceId, "thinkletId": thinkletId, "userId": userId});
+            }
+          }
         }     
-        //call api.createThinkletSpace to create new thinklet group
-        ddpclient.call("api.createThinkletSpace", [thinkletSpaceInfo], createdThinkletSpacesCallback);
-
-        function createdThinkletSpacesCallback(err, id) {
-          if(err) {
-            console.log(err);
-            res.send(404);
-          }
-          thinkletspaceId = id;
-          if(thinkletInfo && thinkletInfo.name) {
-            //if thinkletInfo exists
-            //call api.createThinklets to create thinklet with created thinklet group id
-            ddpclient.call("api.createThinklets", [thinkletspaceId, thinkletInfo], createdThinkletsCallback);
-          } else {
-            //if thinklet information has not been given
-            //step into creating user
-            createdThinkletsCallback(null, null);
-          }
-        }
-    
-        function createdThinkletsCallback(err, id) {
-          if(err) {
-            console.log(err);
-            res.send(404);
-          } else {
-            thinkletId = id;
-            //call api.addUser to add new user with created thinklet group and thinklet ids
-            ddpclient.call("api.addUser", [userInfo, thinkletspaceId], addedUserCallback);
-          }
-        }
-
-        //to add ideas, thinklet should be started
-        //we start it in server to demonstrate adding ideas using api
-        function addedUserCallback(err, id) {
-          if(err) {
-            console.log(err);
-            res.send(404);
-          } else {
-            userId = id;
-            //call api.thinkletStateChange to start thinklet for 1 hour
-            ddpclient.call("api.thinkletStateChange", [thinkletId, "start", 60*60*1000, Date.now(), userId], changedThinkletStateCallback);
-          }
-        }
-
-        function changedThinkletStateCallback(err) {
-          if(err) {
-            console.log(err);
-            res.send(404);
-          } else {
-            //call api.createSSOToken to create sso token with created thinklet group id, thinklet id and new user id
-            ddpclient.call("api.createSSOToken", [userId, thinkletspaceId, thinkletId], createdSSOTokenCallback);
-          }
-        }
-
-        function createdSSOTokenCallback(err, tokenData) {
-          if(err) {
-            console.log(err);
-            res.send(404);
-          } else {
-            //generate url with login token
-            url = "http://localhost:3000/sso/login/" + tokenData.token;
-            res.render("index.html", {"url": url, "thinkletspaceId": thinkletspaceId, "thinkletId": thinkletId, "userId": userId});
-          }
-        }
       }
     }
   });
