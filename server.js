@@ -31,7 +31,7 @@ ddpclient.connect(function(error) {
   //login with ddpclient
   //uses meteor db
   //user is an api user
-  ddpclient.loginWithUsername("apiuser","aaaaaa",function(err,result) {
+  ddpclient.loginWithUsername("userApi","aaaaaa",function(err,result) {
     if(err) {
       console.log("User login error");
     }
@@ -44,27 +44,21 @@ ddpclient.connect(function(error) {
   });
 
   app.post("/get_url", function (req, res) {
+    //check thinkletspace name
     var thinkletSpaceName = req.body.thinkletSpaceName;
     if(!thinkletSpaceName) {
       console.log("thinkletSpace field not found");
       res.send(404);
     } else {
+      //check org id
       var organization = req.body.org;
       if(!organization) {
         console.log("Organization field not found");
         res.send(404);
       } else {
-        var thinkletSpaceInfo = {
-          "name": thinkletSpaceName,
-          "orgId": organization
-        }
+        //thinkletname can be null
         var thinkletName = req.body.thinkletName;
-        var thinkletInfo = {
-          "name": thinkletName,
-          "type": "brainstorm",
-          "usersetId": null,
-          "otherFields": {}
-        }
+        //check user email
         var userEmail = req.body.userEmail;
         if(!userEmail) {
           console.log("User email field not found");
@@ -78,63 +72,82 @@ ddpclient.connect(function(error) {
             "lastname": "anu",
             "organization": "new"
           } 
-          //call api.createThinkletSpace to create new thinklet group
-          ddpclient.call("api.createThinkletSpace", [thinkletSpaceInfo], createdThinkletSpacesCallback);
-          function createdThinkletSpacesCallback(err, id) {
-            if(err) {
-              console.log(err);
-              res.send(404);
-            }
-            thinkletspaceId = id;
-            if(thinkletInfo && thinkletInfo.name) {
-              //if thinkletInfo exists
-              //call api.createThinklets to create thinklet with created thinklet group id
-              ddpclient.call("api.createThinklets", [thinkletspaceId, thinkletInfo], createdThinkletsCallback);
-            } else {
-              //if thinklet information has not been given
-              //step into creating user
-              createdThinkletsCallback(null, null);
-            }
-          }
-        
-          function createdThinkletsCallback(err, id) {
-            if(err) {
-              console.log(err);
-              res.send(404);
-            } else {
-              thinkletId = id;
-              //call api.addUser to add new user with created thinklet group and thinklet ids
-              ddpclient.call("api.addUser", [userInfo, thinkletspaceId], addedUserCallback);
-            }
-          }
-          //to add ideas, thinklet should be started
-          //we start it in server to demonstrate adding ideas using api
+          //call api.createUser 
+          //if user exist for this email, users him
+          //else create one on this
+          ddpclient.call("api.createUser", [userInfo], addedUserCallback);
+
           function addedUserCallback(err, id) {
             if(err) {
               console.log(err);
               res.send(404);
             } else {
               userId = id;
-              //call api.thinkletStateChange to start thinklet for 1 hour
+              var thinkletSpaceInfo = {
+                "name": thinkletSpaceName,
+                "orgId": organization,
+                "user": userId
+              }
+              ddpclient.call("api.createThinkletSpace", [thinkletSpaceInfo], createdThinkletSpacesCallback);
+            }
+          }
+
+          function createdThinkletSpacesCallback(err, id) {
+            if(err) {
+              console.log(err);
+              res.send(404);
+            }
+            thinkletspaceId = id;
+            if(thinkletName) {
+              var thinkletInfo = {
+                "name": thinkletName,
+                "type": "brainstorm",
+                "usersetId": null,
+                "otherFields": {}
+              }
+            }
+            //subscription changes according to thinklet existance and non-existance
+            if(thinkletInfo) {
+              ddpclient.call("api.createThinklets", [thinkletspaceId, thinkletInfo], createdThinkletsCallback);
+            } else {
+              changedThinkletStateCallback(null);
+            }
+          }
+
+          function createdThinkletsCallback(err, id) {
+            if(err) {
+              console.log(err);
+              res.send(404);
+            } else {
+              thinkletId = id;
+              console.log("--------", thinkletspaceId, thinkletId);
+              //start thinklet for one hour
               ddpclient.call("api.thinkletStateChange", [thinkletId, "start", 60*60*1000, Date.now(), userId], changedThinkletStateCallback);
             }
           }
+
           function changedThinkletStateCallback(err) {
             if(err) {
               console.log(err);
               res.send(404);
             } else {
               //call api.createSSOToken to create sso token with created thinklet group id, thinklet id and new user id
-              ddpclient.call("api.createSSOToken", [userId, thinkletspaceId, thinkletId], createdSSOTokenCallback);
+              ddpclient.call("api.createSSOToken", [userId, "facilitator", thinkletspaceId, thinkletId], createdSSOTokenCallback);
             }
           }
+
           function createdSSOTokenCallback(err, tokenData) {
             if(err) {
               console.log(err);
               res.send(404);
             } else {
               //generate url with login token
+              // url = "/api/thinklets/group?thinkletSpaceId=" + thinkletspaceId + "&userId=" + userId + "&thinkletId=" + thinkletId + "&permission=facilitator"
+              // url = url + "&redirectUrl=" + encodeURIComponent("http://localhost:3000/sso/login/" + tokenData.token);
+              // window.open(url);
               url = "http://localhost:3000/sso/login/" + tokenData.token;
+              console.log("----url", url);
+              // url = url + "&redirectUrl=" + "localhost:8000";
               res.render("index.html", {"url": url, "thinkletspaceId": thinkletspaceId, "thinkletId": thinkletId, "userId": userId});
             }
           }
